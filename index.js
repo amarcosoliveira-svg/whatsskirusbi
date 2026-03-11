@@ -106,4 +106,5 @@ app.get('/qr', async (req, res) => {
   } else if (isConnected) {
     res.send('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;color:#0f0;margin:0"><h1 style="font-family:sans-serif">✅ Conectado!</h1></body></html>');
   } else {
-    res.send('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;color:#fff;margin:0;flex-direction:colu
+    res.send('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;color:#fff;margin:0;flex-direction:column"><h2 style="font-family:sans-serif">Aguardando QR code...</h2><script>setTimeout(function(){location.reload()},5000)</script></body></html>');
+  }
