@@ -39,8 +39,7 @@ async function connectWhatsApp() {
       auth: state,
       logger: pino({ level: "silent" }),
       printQRInTerminal: false,
-      browser: ["Chrome (Linux)", "Chrome", "120.0.0"],
-    });
+      });
 
     sock.ev.on("creds.update", saveCreds);
 
@@ -68,7 +67,7 @@ async function connectWhatsApp() {
           console.log("Session invalid. Clearing and retrying...");
           clearAuthInfo();
           retryCount++;
-          const delay = retryCount * 10000;
+          const delay = retryCount * 20000;
           console.log(`Retry ${retryCount}/${MAX_RETRIES} in ${delay / 1000}s`);
           setTimeout(connectWhatsApp, delay);
         } else {
