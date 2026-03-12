@@ -1,5 +1,5 @@
 const express = require("express");
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
 const QRCode = require("qrcode");
 const pino = require("pino");
 const fs = require("fs");
@@ -34,12 +34,15 @@ async function connectWhatsApp() {
 
   try {
     const { state, saveCreds } = await useMultiFileAuthState("auth_info");
+    const { version } = await fetchLatestBaileysVersion();
+    console.log("Using WA version:", version);
 
     sock = makeWASocket({
+      version,
       auth: state,
       logger: pino({ level: "silent" }),
       printQRInTerminal: false,
-      });
+    });
 
     sock.ev.on("creds.update", saveCreds);
 
@@ -61,21 +64,18 @@ async function connectWhatsApp() {
         isConnected = false;
         qrCode = null;
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        console.log(`❌ Disconnected. Code: ${statusCode}`);
+        const errorData = lastDisconnect?.error;
+        console.log(`❌ Disconnected. Code: ${statusCode}, Error: ${errorData?.message}`);
 
-        if (statusCode === 405 || statusCode === DisconnectReason.loggedOut) {
-          console.log("Session invalid. Clearing and retrying...");
+        if (statusCode === DisconnectReason.loggedOut) {
+          console.log("Logged out. Clearing session...");
           clearAuthInfo();
-          retryCount++;
-          const delay = retryCount * 20000;
-          console.log(`Retry ${retryCount}/${MAX_RETRIES} in ${delay / 1000}s`);
-          setTimeout(connectWhatsApp, delay);
-        } else {
-          retryCount++;
-          const delay = Math.min(retryCount * 3000, 30000);
-          console.log(`Reconnecting in ${delay / 1000}s (attempt ${retryCount}/${MAX_RETRIES})`);
-          setTimeout(connectWhatsApp, delay);
         }
+
+        retryCount++;
+        const delay = Math.min(retryCount * 5000, 30000);
+        console.log(`Reconnecting in ${delay / 1000}s (attempt ${retryCount}/${MAX_RETRIES})`);
+        setTimeout(connectWhatsApp, delay);
       }
     });
   } catch (err) {
@@ -99,23 +99,23 @@ app.get("/health", (req, res) => {
 
 app.get("/qr", async (req, res) => {
   if (isConnected) {
-    return res.send("<html><body style='display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif'><h1>✅ WhatsApp Connected!</h1></body></html>");
+    return res.send("<h1>✅ WhatsApp Connected!</h1>");
   }
   if (!qrCode) {
-    return res.send(`<html><body style='display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;flex-direction:column'>
+    return res.send(`
       <h2>Aguardando QR Code...</h2>
       <p>Tentativa ${retryCount}/${MAX_RETRIES}</p>
-      <script>setTimeout(()=>location.reload(), 5000)</script>
-    </body></html>`);
+      <meta http-equiv="refresh" content="5">
+    `);
   }
   try {
     const imgUrl = await QRCode.toDataURL(qrCode);
-    res.send(`<html><body style='display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;flex-direction:column'>
+    res.send(`
       <h2>Escaneie o QR Code no WhatsApp</h2>
-      <img src="${imgUrl}" style="width:300px;height:300px"/>
-      <p style="margin-top:16px;color:#666">Atualiza automaticamente em 30s</p>
-      <script>setTimeout(()=>location.reload(), 30000)</script>
-    </body></html>`);
+      <img src="${imgUrl}" />
+      <p>Atualiza automaticamente em 30s</p>
+      <meta http-equiv="refresh" content="30">
+    `);
   } catch (e) {
     res.status(500).send("Error generating QR image");
   }
