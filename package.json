@@ -1,14 +1,14 @@
 {
-  "name": "whatsskirus",
+  "name": "whatsapp-baileys-server",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^7.0.0-rc.9",
-    "express": "^4.22.1",
-    "pino": "^8.21.0",
-    "qrcode": "^1.5.4"
+    "@whiskeysockets/baileys": "^6.7.16",
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4",
+    "pino": "^9.6.0"
   }
 }
