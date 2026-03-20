@@ -1,4 +1,3 @@
-cat > /mnt/documents/index.js << 'ENDOFFILE'
 const express = require("express");
 const {
   default: makeWASocket,
